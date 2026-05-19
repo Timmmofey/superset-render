@@ -5,8 +5,6 @@ RUN pip install psycopg2-binary
 
 USER superset
 
-ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
-
 CMD ["/bin/sh","-c", "\
 superset db upgrade && \
 superset fab create-admin \
