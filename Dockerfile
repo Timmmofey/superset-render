@@ -1,7 +1,7 @@
 FROM apache/superset:latest
 
 USER root
-RUN pip install psycopg2-binary
+RUN pip install psycopg2-binary gevent
 
 USER superset
 
@@ -16,7 +16,7 @@ superset fab create-admin \
 superset init && \
 gunicorn \
 -w 2 \
--k gevent \
+-k sync \
 --timeout 120 \
 -b 0.0.0.0:$PORT \
 'superset.app:create_app()'"]
