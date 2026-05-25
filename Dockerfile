@@ -3,11 +3,11 @@ FROM apache/superset:latest
 USER root
 
 RUN . /app/.venv/bin/activate && \
-    uv pip install psycopg2-binary
+    uv pip install psycopg2-binary gevent
 
 USER superset
 
-CMD ["/bin/sh", "-c", "\
+CMD ["/bin/sh","-c", "\
 superset db upgrade && \
 superset fab create-admin \
 --username ${ADMIN_USER:-admin} \
@@ -22,5 +22,4 @@ gunicorn \
 --worker-connections 1000 \
 --timeout 120 \
 -b 0.0.0.0:${PORT:-10000} \
-'superset.app:create_app()' \
-"]
+'superset.app:create_app()'"]
