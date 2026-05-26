@@ -2,20 +2,23 @@ FROM apache/superset:latest
 
 USER root
 
+# Системные зависимости (опционально, но для надёжности)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
+# Устанавливаем psycopg2-binary в виртуальное окружение Superset (путь /app/.venv)
+RUN /app/.venv/bin/pip install psycopg2-binary
+
+# Возвращаемся к непривилегированному пользователю
 USER superset
 
-# Копируем конфигурацию (файл должен лежать рядом с Dockerfile)
+# Копируем конфигурационный файл (он должен быть в репозитории)
 COPY superset_config.py /app/
 
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
 
 CMD /bin/bash -c "\
-    source /app/.venv/bin/activate && \
-    pip install psycopg2-binary && \
     superset db upgrade && \
     superset fab create-admin \
         --username \"${SUPERSET_ADMIN_USERNAME:-admin}\" \
@@ -30,3 +33,4 @@ CMD /bin/bash -c "\
         --timeout ${SUPERSET_GUNICORN_TIMEOUT:-120} \
         --bind 0.0.0.0:${PORT:-8088} \
         'superset.app:create_app()'"
+        
