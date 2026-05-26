@@ -11,6 +11,7 @@ ENV PORT=10000
 EXPOSE 10000
 
 CMD ["/bin/sh","-c", "\
+export SUPERSET__SQLALCHEMY_DATABASE_URI=$MY_DATABASE_URL && \
 export PORT=10000 && \
 . /app/.venv/bin/activate && \
 superset db upgrade && \
