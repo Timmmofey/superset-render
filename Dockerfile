@@ -2,18 +2,18 @@ FROM apache/superset:latest
 
 USER root
 
-# Системные зависимости (опционально, но для надёжности)
+# Системные зависимости для сборки (опционально)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем psycopg2-binary в виртуальное окружение Superset (путь /app/.venv)
-RUN /app/.venv/bin/pip install psycopg2-binary
+# Устанавливаем psycopg2-binary через python -m pip (так как pip может отсутствовать в PATH)
+RUN /app/.venv/bin/python -m pip install psycopg2-binary
 
 # Возвращаемся к непривилегированному пользователю
 USER superset
 
-# Копируем конфигурационный файл (он должен быть в репозитории)
+# Копируем конфигурационный файл
 COPY superset_config.py /app/
 
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
@@ -33,4 +33,3 @@ CMD /bin/bash -c "\
         --timeout ${SUPERSET_GUNICORN_TIMEOUT:-120} \
         --bind 0.0.0.0:${PORT:-8088} \
         'superset.app:create_app()'"
-        
