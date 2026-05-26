@@ -7,11 +7,11 @@ RUN . /app/.venv/bin/activate && \
 
 USER superset
 
-# Перебиваем внутренний порт, чтобы Render сразу его видел
 ENV PORT=10000
 EXPOSE 10000
 
 CMD ["/bin/sh","-c", "\
+export PORT=10000 && \
 . /app/.venv/bin/activate && \
 superset db upgrade && \
 superset fab create-admin \
