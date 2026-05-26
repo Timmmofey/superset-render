@@ -1,17 +1,18 @@
-# Исправленный Dockerfile для Apache Superset с поддержкой PostgreSQL/Supabase
+# Исправленный Dockerfile для Apache Superset + PostgreSQL/Supabase
 
 FROM apache/superset:latest
 
-# Переключаемся на root для установки пакетов
 USER root
 
-# Устанавливаем драйвер PostgreSQL
+# Установка системных зависимостей для PostgreSQL
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    . /app/.venv/bin/activate && pip install psycopg2-binary
+    rm -rf /var/lib/apt/lists/*
 
-# Создаем директорию для скриптов
+# Устанавливаем psycopg2-binary в виртуальное окружение Superset (КЛЮЧЕВОЙ МОМЕНТ)
+RUN . /app/.venv/bin/activate && pip install psycopg2-binary
+
+# Создаем директорию для скриптов инициализации
 RUN mkdir -p /app/docker
 
 # Встраиваем скрипт инициализации
@@ -20,13 +21,16 @@ RUN printf '%s\n' \
     'set -e' \
     '. /app/.venv/bin/activate' \
     '' \
+    '# Загрузка конфигурации' \
+    'export SUPERSET_CONFIG_PATH=/app/superset_config.py' \
+    '' \
     '# Обновление метабазы' \
     'superset db upgrade' \
     'superset init' \
     '' \
     '# Создание администратора, если заданы переменные' \
     'if [[ -n "${SUPERSET_ADMIN_USERNAME}" ]] && [[ -n "${SUPERSET_ADMIN_PASSWORD}" ]]; then' \
-    '    echo "Creating/updating admin user ${SUPERSET_ADMIN_USERNAME}..."' \
+    '    echo "Creating admin user ${SUPERSET_ADMIN_USERNAME}..."' \
     '    superset fab create-admin \' \
     '        --username "${SUPERSET_ADMIN_USERNAME}" \' \
     '        --firstname "${SUPERSET_ADMIN_FIRSTNAME:-Superset}" \' \
@@ -47,13 +51,13 @@ RUN printf '%s\n' \
     '    "superset.app:create_app()"' \
     > /app/docker/docker-entrypoint-init.sh && chmod +x /app/docker/docker-entrypoint-init.sh
 
-# Копируем конфигурацию Superset (если файл существует в контексте сборки)
+# Копируем конфигурационный файл
 COPY superset_config.py /app/
 
-# Указываем путь к конфигурации
+# Указываем путь к конфигурации (дублируем на всякий случай)
 ENV SUPERSET_CONFIG_PATH /app/superset_config.py
 
-# Возвращаемся к пользователю superset (безопасность)
+# Возвращаемся к непривилегированному пользователю
 USER superset
 
 ENTRYPOINT ["/app/docker/docker-entrypoint-init.sh"]
