@@ -7,11 +7,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем psycopg2-binary напрямую в venv Superset (без activate)
-RUN . /app/.venv/bin/activate && \
-    uv pip install psycopg2-binary gevent
+# Устанавливаем psycopg2-binary в правильное виртуальное окружение (/app/venv)
+RUN /app/venv/bin/pip install psycopg2-binary
 
-# Создаем директорию для скриптов
+# Создаём директорию для скриптов инициализации
 RUN mkdir -p /app/docker
 
 # Встраиваем скрипт инициализации с проверкой установки psycopg2
@@ -20,7 +19,7 @@ RUN printf '%s\n' \
     'set -e' \
     '' \
     '# Активируем виртуальное окружение' \
-    '. /app/.venv/bin/activate' \
+    '. /app/venv/bin/activate' \
     '' \
     '# Диагностика: проверяем, что psycopg2 установлен' \
     'echo "=== Checking installed packages ==="' \
@@ -53,7 +52,7 @@ RUN printf '%s\n' \
     '    "superset.app:create_app()"' \
     > /app/docker/docker-entrypoint-init.sh && chmod +x /app/docker/docker-entrypoint-init.sh
 
-# Копируем конфигурацию
+# Копируем конфигурационный файл
 COPY superset_config.py /app/
 
 # Указываем путь к конфигурации
