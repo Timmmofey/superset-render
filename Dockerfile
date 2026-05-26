@@ -8,7 +8,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем psycopg2-binary напрямую в venv Superset (без activate)
-RUN /app/.venv/bin/pip install psycopg2-binary
+RUN . /app/.venv/bin/activate && \
+    uv pip install psycopg2-binary gevent
 
 # Создаем директорию для скриптов
 RUN mkdir -p /app/docker
