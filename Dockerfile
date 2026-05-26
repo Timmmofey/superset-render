@@ -2,34 +2,38 @@ FROM apache/superset:latest
 
 USER root
 
-# Системные зависимости для сборки (опционально)
+# Системные зависимости для PostgreSQL (опционально, но полезно)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем psycopg2-binary через python -m pip (так как pip может отсутствовать в PATH)
+# Устанавливаем pip в виртуальное окружение Superset
+RUN /app/.venv/bin/python -m ensurepip --upgrade
+
+# Теперь ставим psycopg2-binary через только что установленный pip
 RUN /app/.venv/bin/python -m pip install psycopg2-binary
 
 # Возвращаемся к непривилегированному пользователю
 USER superset
 
-# Копируем конфигурационный файл
+# Копируем конфигурационный файл (он должен быть в корне репозитория)
 COPY superset_config.py /app/
 
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
 
+# Запуск: инициализация БД и сервер
 CMD /bin/bash -c "\
     superset db upgrade && \
     superset fab create-admin \
         --username \"${SUPERSET_ADMIN_USERNAME:-admin}\" \
-        --firstname \"${SUPERSET_ADMIN_FIRSTNAME:-Admin}\" \
-        --lastname \"${SUPERSET_ADMIN_LASTNAME:-User}\" \
+        --firstname Admin \
+        --lastname User \
         --email \"${SUPERSET_ADMIN_EMAIL:-admin@example.com}\" \
         --password \"${SUPERSET_ADMIN_PASSWORD:-admin}\" || true && \
     superset init && \
     gunicorn \
-        --workers ${SUPERSET_GUNICORN_WORKERS:-2} \
-        --worker-class sync \
-        --timeout ${SUPERSET_GUNICORN_TIMEOUT:-120} \
-        --bind 0.0.0.0:${PORT:-8088} \
+        -w 2 \
+        -k sync \
+        --timeout 120 \
+        -b 0.0.0.0:${PORT:-8088} \
         'superset.app:create_app()'"
