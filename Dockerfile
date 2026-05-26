@@ -1,8 +1,9 @@
-# Dockerfile для Apache Superset с поддержкой PostgreSQL и Supabase
-# Скрипт инициализации встроен прямо в Dockerfile
+# Исправленный Dockerfile для Apache Superset с поддержкой PostgreSQL/Supabase
 
-USER root
 FROM apache/superset:latest
+
+# Переключаемся на root для установки пакетов
+USER root
 
 # Устанавливаем драйвер PostgreSQL
 RUN apt-get update && \
@@ -13,7 +14,7 @@ RUN apt-get update && \
 # Создаем директорию для скриптов
 RUN mkdir -p /app/docker
 
-# ВСТРАИВАЕМ СКРИПТ ИНИЦИАЛИЗАЦИИ прямо внутри Dockerfile
+# Встраиваем скрипт инициализации
 RUN printf '%s\n' \
     '#!/bin/bash' \
     'set -e' \
@@ -46,12 +47,13 @@ RUN printf '%s\n' \
     '    "superset.app:create_app()"' \
     > /app/docker/docker-entrypoint-init.sh && chmod +x /app/docker/docker-entrypoint-init.sh
 
-# Копируем конфигурационный файл Superset (должен быть в той же директории, что и Dockerfile)
+# Копируем конфигурацию Superset (если файл существует в контексте сборки)
 COPY superset_config.py /app/
 
 # Указываем путь к конфигурации
 ENV SUPERSET_CONFIG_PATH /app/superset_config.py
 
+# Возвращаемся к пользователю superset (безопасность)
 USER superset
 
 ENTRYPOINT ["/app/docker/docker-entrypoint-init.sh"]
