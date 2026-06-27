@@ -6,3 +6,4 @@ if raw_url and raw_url.startswith('postgresql://'):
     raw_url = raw_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 SQLALCHEMY_DATABASE_URI = raw_url
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+PUBLIC_ROLE_LIKE_GAMMA = True
